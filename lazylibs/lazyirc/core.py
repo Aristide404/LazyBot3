@@ -115,9 +115,7 @@ class IRCUserList():
 
     def __delitem__(self, key):
         for index in range(len(self._internalList)):
-            print("USERS : Looking for %s, actually  at index %s \t[index:%s='%s']" % (key, index, index, self._internalList[index].getNick()))
             if self._internalList[index].getNick() == key:
-                print("USERS : %s found at index %s" % (key, index))
                 del self._internalList[index]
                 return True
 

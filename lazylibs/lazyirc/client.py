@@ -78,6 +78,13 @@ class IRCConnectionHandler(QObject):
                         argListIndex += 1
                         nickPointer.setMode(char, modifier)
 
+            elif query == "KICK":
+                chan = data.split(" ")[2]
+                source = IRCHost(parser.group("source").strip())
+                dest = self.chans[chan].users[parser.group("dest").strip()].getFullHost()
+                print("%s → RUN KICK ON : %s " % (source, dest))
+                self.delUserInChannel(chan, dest)
+
             # NUMBERS
             elif query == "001":
                 #TODO : For test !!! REMOVE ON INTIIAL RELEASE
