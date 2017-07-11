@@ -23,7 +23,7 @@ class IRCChannel():
     def setCreator(self, creator): self._creator = creator
 
 class IRCHost():
-    def __init__(self, host):
+    def __init__(self, host=""):
         self._host = host
         self._regexp = "(?P<nick>[^@!\ ]*)(?:(?:!(?P<ident>[^@]*))?@(?P<host>[^\ ]*))?"
 

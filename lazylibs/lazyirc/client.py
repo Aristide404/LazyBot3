@@ -16,13 +16,15 @@ class IRCConnectionHandler(QObject):
     privmsg = pyqtSignal(object, str, str, str)
 
 
-    def __init__(self, server="", port=0):
+    def __init__(self, server="", port=0, nick=""):
         QObject.__init__(self)
         self.chans = IRCChannelList()
         self._regexp = "(?::(?P<source>[^ ]+) +)?(?P<query>[^ :]+)(?P<dest>(?: +[^ :]+))*(?P<coda> +:(?P<message>.*)?)?"
 
         self._server = server
         self._port = port
+        self._nick = nick
+        self.me = ""
 
         #QTcpSocket.readyRead.connect(self._parseMessage)
         self.sk = socket()
@@ -46,6 +48,8 @@ class IRCConnectionHandler(QObject):
                 self.sendData("PONG %s" % parser.group("coda"))
                 self.ping.emit(self, parser.group("coda"))
             elif query == "PRIVMSG":
+                self.sMessage(parser.group("dest"), "TA GUEULE ENCULÉ DE TA RACE !!")
+                self.sPart(parser.group("dest"), "Pour que ta gueule soit fermée à jamais :x")
                 #self.sendData("PRIVMSG %s :Franchement, %s, ce n'est pas que je t'aimes pas. J'aimerais juste que tu crèves" % (parser.group("dest"), nick))
                 self.privmsg.emit(self, parser.group("source"), parser.group("dest"), parser.group("message"))
             elif query == "JOIN":
@@ -82,14 +86,14 @@ class IRCConnectionHandler(QObject):
                 chan = data.split(" ")[2]
                 source = IRCHost(parser.group("source").strip())
                 dest = self.chans[chan].users[parser.group("dest").strip()].getFullHost()
-                print("%s → RUN KICK ON : %s " % (source, dest))
                 self.delUserInChannel(chan, dest)
 
             # NUMBERS
             elif query == "001":
-                #TODO : For test !!! REMOVE ON INTIIAL RELEASE
+                #TODO : For test !!! REMOVE ON INITIAL RELEASE
                 self.sendData("JOIN #test,#test2")
                 #TODO ========================================
+                self.me = data.split(" ")[2]
                 self.identified.emit(self)
             elif query == "332":
                 # WHEN YOU JOIN CHANNEL - TOPIC
@@ -165,6 +169,7 @@ class IRCConnectionHandler(QObject):
     def setServer(self, server): self._server = server
 
     def addUserInChannel(self, chanName, host):
+        """ Add user in channel (and return user addedd. Return direcly IRCUser if already added)"""
         user = IRCUser(host)
         if not user.getNick() in self.chans[chanName].users:
             self.chans[chanName].users[user.getNick()] = user
@@ -172,12 +177,16 @@ class IRCConnectionHandler(QObject):
 
 
     def delUserInChannel(self, chanName, host):
+        """ Del user from channel (If nick = bot, destruct channel)"""
         user = IRCUser(host)
-        if user.getNick() in self.chans[chanName].users:
-            del self.chans[chanName].users[user.getNick()]
-            return True
+        if user.getNick().lower() != self.me.lower():
+            if user.getNick() in self.chans[chanName].users:
+                del self.chans[chanName].users[user.getNick()]
+                return True
+            else:
+                return False
         else:
-            return False
+            del self.chans[chanName]
 
     def sJoin(self, chanName):
         self.sendData("JOIN %s\n" % (chanName))
